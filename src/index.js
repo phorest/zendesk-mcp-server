@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer } from './server.js';
+import { ZendeskClient } from './zendesk-client.js';
 import express from 'express';
 import dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
@@ -12,6 +13,19 @@ const app = express();
 // Map to track transports and servers by session ID
 const sessions = {};
 
+function getCredentials(req) {
+  // Try headers first (set by Notion AI or other MCP clients)
+  const subdomain = req.headers['x-zendesk-subdomain'] || process.env.ZENDESK_SUBDOMAIN;
+  const email = req.headers['x-zendesk-email'] || process.env.ZENDESK_EMAIL;
+  const apiToken = req.headers['x-zendesk-api-token'] || process.env.ZENDESK_API_TOKEN;
+
+  if (!subdomain || !email || !apiToken) {
+    return null;
+  }
+
+  return { subdomain, email, apiToken };
+}
+
 app.post('/mcp', async (req, res) => {
   const sessionId = req.headers['mcp-session-id'];
 
@@ -20,13 +34,22 @@ app.post('/mcp', async (req, res) => {
     return;
   }
 
-  // New session - generate ID upfront so we can store before handleRequest
+  // New session - extract credentials from headers
+  const credentials = getCredentials(req);
+  if (!credentials) {
+    res.status(401).json({
+      error: 'Missing Zendesk credentials. Set headers: x-zendesk-subdomain, x-zendesk-email, x-zendesk-api-token'
+    });
+    return;
+  }
+
   const id = randomUUID();
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => id,
   });
 
-  const server = createServer();
+  const client = new ZendeskClient(credentials);
+  const server = createServer(client);
 
   transport.onclose = () => {
     if (sessions[id]) {
@@ -35,8 +58,6 @@ app.post('/mcp', async (req, res) => {
   };
 
   await server.connect(transport);
-
-  // Store session before handling request (handleRequest may keep connection open for SSE)
   sessions[id] = { transport, server };
 
   await transport.handleRequest(req, res);

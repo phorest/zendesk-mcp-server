@@ -1,5 +1,4 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { zendeskClient } from './zendesk-client.js';
 import { ticketsTools } from './tools/tickets.js';
 import { usersTools } from './tools/users.js';
 import { organizationsTools } from './tools/organizations.js';
@@ -13,22 +12,6 @@ import { helpCenterTools } from './tools/help-center.js';
 import { supportTools } from './tools/support.js';
 import { talkTools } from './tools/talk.js';
 import { chatTools } from './tools/chat.js';
-
-const allTools = [
-  ...ticketsTools,
-  ...usersTools,
-  ...organizationsTools,
-  ...groupsTools,
-  ...macrosTools,
-  ...viewsTools,
-  ...triggersTools,
-  ...automationsTools,
-  ...searchTools,
-  ...helpCenterTools,
-  ...supportTools,
-  ...talkTools,
-  ...chatTools
-];
 
 const docs = {
   "tickets": "Tickets API allows you to create, modify, and manage support tickets.\nEndpoints: GET /api/v2/tickets, POST /api/v2/tickets, etc.",
@@ -47,12 +30,28 @@ const docs = {
   "overview": "The Zendesk API is a RESTful API that uses JSON for serialization. It provides access to Zendesk Support, Talk, Chat, and Guide products."
 };
 
-function createServer() {
+function createServer(client) {
   const server = new McpServer({
     name: "Zendesk API",
     version: "1.0.0",
     description: "MCP Server for interacting with the Zendesk API"
   });
+
+  const allTools = [
+    ...ticketsTools(client),
+    ...usersTools(client),
+    ...organizationsTools(client),
+    ...groupsTools(client),
+    ...macrosTools(client),
+    ...viewsTools(client),
+    ...triggersTools(client),
+    ...automationsTools(client),
+    ...searchTools(client),
+    ...helpCenterTools(client),
+    ...supportTools(client),
+    ...talkTools(client),
+    ...chatTools(client)
+  ];
 
   allTools.forEach(tool => {
     server.tool(
@@ -75,7 +74,6 @@ function createServer() {
           }]
         };
       }
-
       if (docs[section]) {
         return {
           contents: [{
@@ -84,7 +82,6 @@ function createServer() {
           }]
         };
       }
-
       return {
         contents: [{
           uri: uri.href,
