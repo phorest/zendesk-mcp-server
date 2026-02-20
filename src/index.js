@@ -13,17 +13,22 @@ const app = express();
 // Map to track transports and servers by session ID
 const sessions = {};
 
-function getCredentials(req) {
-  // Try headers first (set by Notion AI or other MCP clients)
-  const subdomain = req.headers['x-zendesk-subdomain'] || process.env.ZENDESK_SUBDOMAIN;
-  const email = req.headers['x-zendesk-email'] || process.env.ZENDESK_EMAIL;
-  const apiToken = req.headers['x-zendesk-api-token'] || process.env.ZENDESK_API_TOKEN;
+const ZENDESK_SUBDOMAIN = 'phorest';
 
-  if (!subdomain || !email || !apiToken) {
+function getCredentials(req) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
     return null;
   }
 
-  return { subdomain, email, apiToken };
+  const decoded = Buffer.from(authHeader.slice(6), 'base64').toString();
+  const [email, apiToken] = decoded.split(':');
+
+  if (!email || !apiToken) {
+    return null;
+  }
+
+  return { subdomain: ZENDESK_SUBDOMAIN, email, apiToken };
 }
 
 app.post('/mcp', async (req, res) => {
@@ -38,7 +43,7 @@ app.post('/mcp', async (req, res) => {
   const credentials = getCredentials(req);
   if (!credentials) {
     res.status(401).json({
-      error: 'Missing Zendesk credentials. Set headers: x-zendesk-subdomain, x-zendesk-email, x-zendesk-api-token'
+      error: 'Missing credentials. Send Authorization: Basic base64(email:api-token)'
     });
     return;
   }
