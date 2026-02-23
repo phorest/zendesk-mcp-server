@@ -74,18 +74,5 @@ export const triggersTools = (client) => [
         return { content: [{ type: "text", text: `Error updating trigger: ${error.message}` }], isError: true };
       }
     }
-  },
-  {
-    name: "delete_trigger",
-    description: "Delete a trigger",
-    schema: { id: z.number().describe("Trigger ID to delete") },
-    handler: async ({ id }) => {
-      try {
-        await client.deleteTrigger(id);
-        return { content: [{ type: "text", text: `Trigger ${id} deleted successfully!` }] };
-      } catch (error) {
-        return { content: [{ type: "text", text: `Error deleting trigger: ${error.message}` }], isError: true };
-      }
-    }
   }
 ];

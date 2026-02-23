@@ -86,18 +86,5 @@ export const ticketsTools = (client) => [
         return { content: [{ type: "text", text: `Error updating ticket: ${error.message}` }], isError: true };
       }
     }
-  },
-  {
-    name: "delete_ticket",
-    description: "Delete a ticket",
-    schema: { id: z.number().describe("Ticket ID to delete") },
-    handler: async ({ id }) => {
-      try {
-        await client.deleteTicket(id);
-        return { content: [{ type: "text", text: `Ticket ${id} deleted successfully!` }] };
-      } catch (error) {
-        return { content: [{ type: "text", text: `Error deleting ticket: ${error.message}` }], isError: true };
-      }
-    }
   }
 ];

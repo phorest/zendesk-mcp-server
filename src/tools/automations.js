@@ -74,18 +74,5 @@ export const automationsTools = (client) => [
         return { content: [{ type: "text", text: `Error updating automation: ${error.message}` }], isError: true };
       }
     }
-  },
-  {
-    name: "delete_automation",
-    description: "Delete an automation",
-    schema: { id: z.number().describe("Automation ID to delete") },
-    handler: async ({ id }) => {
-      try {
-        await client.deleteAutomation(id);
-        return { content: [{ type: "text", text: `Automation ${id} deleted successfully!` }] };
-      } catch (error) {
-        return { content: [{ type: "text", text: `Error deleting automation: ${error.message}` }], isError: true };
-      }
-    }
   }
 ];
